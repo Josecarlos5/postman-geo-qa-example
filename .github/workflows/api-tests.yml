@@ -1,74 +1,36 @@
-{
-  "info": {
-    "name": "Geo QA Example",
-    "_postman_id": "d8f13a1c-0000-0000-0000-000000000000",
-    "description": "Example Postman collection for API QA testing",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "item": [
-    {
-      "name": "Health Check - 200",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/status/200",
-          "host": ["{{baseUrl}}"],
-          "path": ["status", "200"]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Auth - Login (valid)",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "var json = pm.response.json();",
-              "pm.environment.set('token', json.token);"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"email\": \"eve.holt@reqres.in\",\n    \"password\": \"cityslicka\"\n}"
-        },
-        "url": {
-          "raw": "{{authUrl}}/login",
-          "host": ["{{authUrl}}"],
-          "path": ["login"]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "CRUD - Create Resource",
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{ \"title\": \"foo\", \"body\": \"bar\", \"userId\": 1 }"
-        },
-        "url": {
-          "raw": "{{jsonPlaceholder}}/posts",
-          "host": ["{{jsonPlaceholder}}"],
-          "path": ["posts"]
-        }
-      },
-      "response": []
-    }
-  ]
-}
+name: API Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  newman:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Newman
+        run: npm install -g newman newman-reporter-htmlextra
+
+      - name: Run Postman Collection
+        run: |
+          newman run collections/geo-qa.postman_collection.json \
+            -e envs/staging.postman_environment.json \
+            -d data/login_cases.csv \
+            -r cli,htmlextra \
+            --reporter-htmlextra-export reports/report.html
+
+      - name: Upload Newman Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: newman-report
+          path: reports/report.html

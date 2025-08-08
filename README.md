@@ -10,7 +10,6 @@ This repository is a starter template for testing REST APIs using Postman and Ne
 - `reports/` — HTML reports generated after tests
 
 ## Local Run
-```bash
 npm install -g newman newman-reporter-htmlextra
 
 newman run collections/geo-qa.postman_collection.json \
